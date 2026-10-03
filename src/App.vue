@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import { ref, watch, onMounted, reactive } from 'vue'
 import WinnersBlock from './components/blocks/WinnersBlock.vue'
 import RegistrationForm from './components/blocks/RegistrationForm.vue'
@@ -17,6 +19,10 @@ export interface Participant {
 
 const participants = ref<Participant[]>([])
 const globalError = ref('')
+
+const searchQuery = ref('')
+const sortKey = ref<'name' | 'dateOfBirth' | null>(null)
+const sortOrder = ref<'asc' | 'desc'>('asc')
 
 onMounted(() => {
   const saved = localStorage.getItem('participants')
@@ -44,6 +50,43 @@ const handleAddParticipant = (newParticipant: Participant) => {
   }
   participants.value.push(newParticipant)
 }
+
+const handleFilter = (query: string) => {
+  searchQuery.value = query
+}
+
+const handleSort = (key: 'name' | 'dateOfBirth') => {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortKey.value = key
+    sortOrder.value = 'asc'
+  }
+}
+
+const displayedParticipants = computed(() => {
+  let result = [...participants.value] // Робимо копію, щоб не міняти оригінал
+
+  // 1. Фільтрація
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase()
+    result = result.filter((p) => p.name.toLowerCase().includes(q))
+  }
+
+  // 2. Сортування
+  if (sortKey.value) {
+    result.sort((a, b) => {
+      const valA = a[sortKey.value!].toLowerCase()
+      const valB = b[sortKey.value!].toLowerCase()
+
+      if (valA < valB) return sortOrder.value === 'asc' ? -1 : 1
+      if (valA > valB) return sortOrder.value === 'asc' ? 1 : -1
+      return 0
+    })
+  }
+
+  return result
+})
 
 // ================= РОБОТА З МОДАЛКАМИ =================
 
@@ -151,11 +194,14 @@ const confirmEdit = () => {
         <RegistrationForm @add-participant="handleAddParticipant" />
       </div>
 
-      <!-- Слухаємо події з таблиці -->
       <ParticipantsTable
-        :participants="participants"
+        :participants="displayedParticipants"
+        :sort-key="sortKey"
+        :sort-order="sortOrder"
         @request-edit="openEditModal"
         @request-delete="openDeleteModal"
+        @request-sort="handleSort"
+        @filter-by-name="handleFilter"
       />
     </div>
 
