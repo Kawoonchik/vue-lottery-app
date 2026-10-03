@@ -88,6 +88,44 @@ const displayedParticipants = computed(() => {
   return result
 })
 
+// ================= ЛОГІКА ЛОТЕРЕЇ =================
+// Зберігаємо лише ID переможців, щоб завжди мати актуальні дані з масиву participants
+const winnerIds = ref<string[]>([])
+
+// Обчислювана властивість: перетворює масив ID на масив об'єктів Participant
+const winnerParticipants = computed(() => {
+  return winnerIds.value
+    .map((id) => participants.value.find((p) => p.id === id))
+    .filter(Boolean) as Participant[] // filter(Boolean) відкидає undefined, якщо юзера видалили
+})
+
+// Умови, за яких кнопка активна:
+// є юзери, переможців менше ніж 3, і переможців менше ніж загалом учасників
+const canPickWinner = computed(() => {
+  return (
+    participants.value.length > 0 &&
+    winnerIds.value.length < 3 &&
+    winnerIds.value.length < participants.value.length
+  )
+})
+
+const handlePickWinner = () => {
+  if (!canPickWinner.value) return
+
+  // Шукаємо тих, хто ще не є переможцем
+  const availableParticipants = participants.value.filter((p) => !winnerIds.value.includes(p.id))
+
+  if (availableParticipants.length > 0) {
+    // Обираємо випадковий індекс
+    const randomIndex = Math.floor(Math.random() * availableParticipants.length)
+    winnerIds.value.push(availableParticipants[randomIndex]!.id)
+  }
+}
+
+const handleRemoveWinner = (id: string) => {
+  winnerIds.value = winnerIds.value.filter((wid) => wid !== id)
+}
+
 // ================= РОБОТА З МОДАЛКАМИ =================
 
 const selectedParticipant = ref<Participant | null>(null)
@@ -102,8 +140,10 @@ const openDeleteModal = (participant: Participant) => {
 
 const confirmDelete = () => {
   if (selectedParticipant.value) {
-    participants.value = participants.value.filter((p) => p.id !== selectedParticipant.value!.id)
-    // У майбутньому тут також додамо видалення з масиву переможців
+    const idToDelete = selectedParticipant.value.id // Оголошуємо змінну
+
+    participants.value = participants.value.filter((p) => p.id !== idToDelete)
+    handleRemoveWinner(idToDelete)
   }
   isDeleteModalOpen.value = false
   selectedParticipant.value = null
@@ -185,7 +225,12 @@ const confirmEdit = () => {
 <template>
   <div class="min-h-screen bg-gray-50 py-10 px-4">
     <div class="max-w-5xl mx-auto flex flex-col gap-6">
-      <WinnersBlock />
+      <WinnersBlock
+        :winners="winnerParticipants"
+        :can-pick-winner="canPickWinner"
+        @pick-winner="handlePickWinner"
+        @remove-winner="handleRemoveWinner"
+      />
 
       <div>
         <div v-if="globalError" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
