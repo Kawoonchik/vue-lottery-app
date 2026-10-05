@@ -18,7 +18,6 @@ const emit = defineEmits<{
 
 <template>
   <div class="bg-white p-6 rounded shadow-sm border border-gray-200">
-    <!-- Підключаємо компонент пошуку та прокидаємо його подію вище -->
     <SearchBar @filter-by-name="emit('filter-by-name', $event)" />
 
     <div class="overflow-x-auto">
@@ -27,7 +26,6 @@ const emit = defineEmits<{
           <tr>
             <th scope="col" class="px-6 py-3">#</th>
 
-            <!-- Клікабельні заголовки для сортування -->
             <th
               scope="col"
               class="px-6 py-3 cursor-pointer hover:bg-gray-200 select-none"

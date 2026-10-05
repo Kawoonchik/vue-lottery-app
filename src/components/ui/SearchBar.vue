@@ -8,7 +8,6 @@ const emit = defineEmits<{
 const searchQuery = ref('')
 let timeout: ReturnType<typeof setTimeout>
 
-// Спостерігач з debounce 300 мс
 watch(searchQuery, (newValue) => {
   clearTimeout(timeout)
   timeout = setTimeout(() => {

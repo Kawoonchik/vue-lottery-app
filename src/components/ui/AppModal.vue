@@ -12,8 +12,6 @@ const emit = defineEmits<{
 
 const modalRef = ref<HTMLElement | null>(null)
 
-// Коли вікно відкривається, автоматично фокусуємось на ньому,
-// щоб працював ключовий модифікатор .esc
 watch(
   () => props.isOpen,
   async (newVal) => {
@@ -27,7 +25,6 @@ watch(
 
 <template>
   <Transition name="fade">
-    <!-- Ключовий модифікатор .esc для закриття -->
     <div
       v-if="isOpen"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
@@ -44,7 +41,6 @@ watch(
         </button>
         <h3 class="text-lg font-bold mb-4">{{ title }}</h3>
 
-        <!-- Слот за замовчуванням для контенту -->
         <slot></slot>
       </div>
     </div>
@@ -52,7 +48,6 @@ watch(
 </template>
 
 <style scoped>
-/* Анімації для Transition */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;

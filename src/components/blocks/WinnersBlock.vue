@@ -18,7 +18,6 @@ const emit = defineEmits<{
   <div class="bg-white p-6 rounded shadow-sm border border-gray-200">
     <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
       <h2 class="text-sm font-bold text-gray-400 uppercase">Winners</h2>
-      <!-- Кнопка генерує подію вибору переможця -->
       <AppButton :disabled="!canPickWinner" @click="emit('pick-winner')"> New winner </AppButton>
     </div>
 

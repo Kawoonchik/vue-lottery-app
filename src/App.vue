@@ -24,10 +24,17 @@ const searchQuery = ref('')
 const sortKey = ref<'name' | 'dateOfBirth' | null>(null)
 const sortOrder = ref<'asc' | 'desc'>('asc')
 
+const winnerIds = ref<string[]>([])
+
 onMounted(() => {
-  const saved = localStorage.getItem('participants')
-  if (saved) {
-    participants.value = JSON.parse(saved)
+  const savedParticipants = localStorage.getItem('participants')
+  if (savedParticipants) {
+    participants.value = JSON.parse(savedParticipants)
+  }
+
+  const savedWinners = localStorage.getItem('winnerIds')
+  if (savedWinners) {
+    winnerIds.value = JSON.parse(savedWinners)
   }
 })
 
@@ -35,6 +42,14 @@ watch(
   participants,
   (newVal) => {
     localStorage.setItem('participants', JSON.stringify(newVal))
+  },
+  { deep: true },
+)
+
+watch(
+  winnerIds,
+  (newVal) => {
+    localStorage.setItem('winnerIds', JSON.stringify(newVal))
   },
   { deep: true },
 )
@@ -65,15 +80,13 @@ const handleSort = (key: 'name' | 'dateOfBirth') => {
 }
 
 const displayedParticipants = computed(() => {
-  let result = [...participants.value] // Робимо копію, щоб не міняти оригінал
+  let result = [...participants.value] // копію
 
-  // 1. Фільтрація
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
     result = result.filter((p) => p.name.toLowerCase().includes(q))
   }
 
-  // 2. Сортування
   if (sortKey.value) {
     result.sort((a, b) => {
       const valA = a[sortKey.value!].toLowerCase()
@@ -88,19 +101,15 @@ const displayedParticipants = computed(() => {
   return result
 })
 
-// ================= ЛОГІКА ЛОТЕРЕЇ =================
-// Зберігаємо лише ID переможців, щоб завжди мати актуальні дані з масиву participants
-const winnerIds = ref<string[]>([])
+// ЛОТЕРЕя
 
-// Обчислювана властивість: перетворює масив ID на масив об'єктів Participant
+// перетворює масив ID на масив об'єктів Participant
 const winnerParticipants = computed(() => {
   return winnerIds.value
     .map((id) => participants.value.find((p) => p.id === id))
-    .filter(Boolean) as Participant[] // filter(Boolean) відкидає undefined, якщо юзера видалили
+    .filter(Boolean) as Participant[]
 })
 
-// Умови, за яких кнопка активна:
-// є юзери, переможців менше ніж 3, і переможців менше ніж загалом учасників
 const canPickWinner = computed(() => {
   return (
     participants.value.length > 0 &&
@@ -112,11 +121,9 @@ const canPickWinner = computed(() => {
 const handlePickWinner = () => {
   if (!canPickWinner.value) return
 
-  // Шукаємо тих, хто ще не є переможцем
   const availableParticipants = participants.value.filter((p) => !winnerIds.value.includes(p.id))
 
   if (availableParticipants.length > 0) {
-    // Обираємо випадковий індекс
     const randomIndex = Math.floor(Math.random() * availableParticipants.length)
     winnerIds.value.push(availableParticipants[randomIndex]!.id)
   }
@@ -126,11 +133,10 @@ const handleRemoveWinner = (id: string) => {
   winnerIds.value = winnerIds.value.filter((wid) => wid !== id)
 }
 
-// ================= РОБОТА З МОДАЛКАМИ =================
+// МОДАЛКА
 
 const selectedParticipant = ref<Participant | null>(null)
 
-// --- Видалення ---
 const isDeleteModalOpen = ref(false)
 
 const openDeleteModal = (participant: Participant) => {
@@ -140,7 +146,7 @@ const openDeleteModal = (participant: Participant) => {
 
 const confirmDelete = () => {
   if (selectedParticipant.value) {
-    const idToDelete = selectedParticipant.value.id // Оголошуємо змінну
+    const idToDelete = selectedParticipant.value.id
 
     participants.value = participants.value.filter((p) => p.id !== idToDelete)
     handleRemoveWinner(idToDelete)
@@ -202,7 +208,7 @@ const validateEditForm = () => {
 const confirmEdit = () => {
   if (!validateEditForm()) return
 
-  // Перевірка унікальності e-mail (без урахування регістру), ігноруючи поточного користувача
+  //унікальності e-mail
   const emailExists = participants.value.some(
     (p) => p.email.toLowerCase() === editForm.email.toLowerCase() && p.id !== editForm.id,
   )
@@ -212,7 +218,6 @@ const confirmEdit = () => {
     return
   }
 
-  // Оновлюємо дані
   const index = participants.value.findIndex((p) => p.id === editForm.id)
   if (index !== -1) {
     participants.value[index] = { ...editForm }

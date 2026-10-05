@@ -20,7 +20,6 @@ const isSubmitted = ref(false)
 
 const validateForm = () => {
   let isValid = true
-  // Скидаємо старі помилки
   Object.keys(errors).forEach((key) => (errors[key as keyof typeof errors] = ''))
 
   if (!form.name.trim()) {
@@ -64,7 +63,6 @@ const validateForm = () => {
 const handleSubmit = () => {
   isSubmitted.value = true
   if (validateForm()) {
-    // Відправляємо дані наверх у таблицю
     emit('add-participant', {
       id: crypto.randomUUID(),
       name: form.name.trim(),
@@ -73,7 +71,6 @@ const handleSubmit = () => {
       phone: form.phone.trim(),
     })
 
-    // Очищуємо форму та скидаємо прапорець відправки
     isSubmitted.value = false
     Object.assign(form, initialFormState)
     Object.keys(errors).forEach((key) => (errors[key as keyof typeof errors] = ''))
@@ -88,7 +85,7 @@ const handleSubmit = () => {
       <p class="text-gray-400 text-xs mt-1">Please fill in all the fields.</p>
     </div>
 
-    <form @submit.prevent="handleSubmit" @keyup.enter="handleSubmit">
+    <form @submit.prevent="handleSubmit" @keydown.enter.prevent="handleSubmit">
       <AppInput
         v-model="form.name"
         label="Name"
