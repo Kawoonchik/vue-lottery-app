@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-
+import { Teleport } from 'vue'
 import { ref, watch, onMounted, reactive } from 'vue'
 import WinnersBlock from './components/blocks/WinnersBlock.vue'
 import RegistrationForm from './components/blocks/RegistrationForm.vue'
