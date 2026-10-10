@@ -1,11 +1,17 @@
 import { UserService } from './user.service'
+import { AuthService } from './auth.service'
 
 export class ServiceProvider {
   private static userService?: UserService
+  private static authService?: AuthService
 
   static get users(): UserService {
-    // Якщо сервіс ще не створено (??=), створюємо його. Якщо створено — просто віддаємо.
     this.userService ??= new UserService()
     return this.userService
+  }
+
+  static get auth(): AuthService {
+    this.authService ??= new AuthService()
+    return this.authService
   }
 }
