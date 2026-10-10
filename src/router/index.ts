@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,7 +21,7 @@ const router = createRouter({
       path: '/users',
       name: 'users',
       component: () => import('../views/UsersView.vue'),
-      meta: { title: 'Users | Lottery App' },
+      meta: { title: 'Users | Lottery App', requiresAuth: true },
     },
     {
       path: '/login',
@@ -36,6 +37,24 @@ const router = createRouter({
       meta: { title: '404 Not Found | Lottery App' },
     },
   ],
+})
+
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+  const isAuthenticated = authStore.isAuthenticated
+
+  // Якщо маршрут захищений і юзер не залогінений
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    next({ name: 'login', query: { redirect: to.fullPath } })
+  }
+  // Якщо юзер вже залогінений, йому не треба сторінка логіну
+  else if (to.name === 'login' && isAuthenticated) {
+    next({ name: 'users' })
+  }
+  // В усіх інших випадках пропускаємо
+  else {
+    next()
+  }
 })
 
 // Автоматична зміна заголовка вкладки браузера
