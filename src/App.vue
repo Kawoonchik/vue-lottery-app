@@ -1,9 +1,20 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute, RouterView } from 'vue-router'
+import DefaultLayout from './layouts/DefaultLayout.vue'
+import AuthLayout from './layouts/AuthLayout.vue'
+
+const route = useRoute()
+
+// Динамічно визначаємо, який макет використовувати
+const layout = computed(() => {
+  return route.meta.layout === 'AuthLayout' ? AuthLayout : DefaultLayout
+})
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 text-gray-900 font-sans">
+  <!-- Спеціальний тег <component :is="..."> динамічно рендерить переданий йому компонент -->
+  <component :is="layout">
     <RouterView />
-  </div>
+  </component>
 </template>
