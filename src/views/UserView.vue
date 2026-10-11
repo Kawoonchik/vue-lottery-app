@@ -71,7 +71,7 @@ onMounted(() => {
       </div>
 
       <!-- Вкладений маршрут (форма редагування) рендериться тут -->
-      <RouterView v-else :user="user" @update-success="fetchUser" />
+      <RouterView v-else :user="user" @update-success="user = $event" />
     </div>
   </div>
 </template>

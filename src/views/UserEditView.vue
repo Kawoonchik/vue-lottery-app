@@ -10,7 +10,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update-success'): void
+  (e: 'update-success', updatedUser: User): void
 }>()
 
 const router = useRouter()
@@ -21,13 +21,12 @@ const handleUpdate = async (values: UpdateUserDto) => {
   isMutating.value = true
   updateError.value = ''
   try {
-    // Відправляємо PUT запит. Сервер поверне "ОК", але базу не змінить.
-    await ServiceProvider.users.update(props.user.id, values)
+    // Зберігаємо те, що повернув сервер (це будуть оновлені дані)
+    const updatedUser = await ServiceProvider.users.update(props.user.id, values)
 
-    // Повідомляємо батьківський компонент, що треба оновити дані
-    emit('update-success')
+    // Передаємо ці нові дані батьківському компоненту
+    emit('update-success', updatedUser)
 
-    // Повертаємося на сторінку профілю
     router.push(`/users/${props.user.id}`)
   } catch (e: any) {
     updateError.value = 'Failed to update user: ' + e.message

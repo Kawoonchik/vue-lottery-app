@@ -15,20 +15,33 @@ const users = ref<User[]>([])
 const isLoading = ref(false)
 const isMutating = ref(false)
 const globalError = ref<string | null>(null)
-const searchQuery = ref((route.query.q as string) || '')
 
-// Стан модалок
+// --- URL State ---
+const searchQuery = ref((route.query.q as string) || '')
+const currentPage = ref(Number(route.query.page) || 1)
+const itemsPerPage = 10
+const totalUsers = ref(0) // Зберігаємо загальну кількість для блокування кнопки Next
+
+// Модалки
 const isAddModalOpen = ref(false)
 const isDeleteModalOpen = ref(false)
 const selectedUser = ref<User | null>(null)
 
-// --- Завантаження даних ---
+// --- Завантаження ---
 const fetchUsers = async () => {
   isLoading.value = true
   globalError.value = null
   try {
-    const data = await ServiceProvider.users.getAll({ q: searchQuery.value })
+    // Розраховуємо скільки записів пропустити
+    const skip = (currentPage.value - 1) * itemsPerPage
+    const data = await ServiceProvider.users.getAll({
+      q: searchQuery.value,
+      limit: itemsPerPage,
+      skip: skip,
+    })
+
     users.value = data.items
+    totalUsers.value = data.total // Отримуємо загальну кількість юзерів з АРІ
   } catch (e: any) {
     globalError.value = 'Failed to load users: ' + e.message
   } finally {
@@ -36,20 +49,46 @@ const fetchUsers = async () => {
   }
 }
 
-const handleSearch = (query: string) => {
-  searchQuery.value = query
-  router.replace({ query: { ...route.query, q: query ? query : undefined } })
+// Оновлення URL без перезавантаження
+const updateUrl = () => {
+  router.replace({
+    query: {
+      q: searchQuery.value ? searchQuery.value : undefined,
+      page: currentPage.value > 1 ? currentPage.value : undefined,
+    },
+  })
 }
 
-onMounted(() => fetchUsers())
-watch(searchQuery, () => fetchUsers())
+const handleSearch = (query: string) => {
+  searchQuery.value = query
+  currentPage.value = 1 // При новому пошуку завжди скидаємо на першу сторінку
+  updateUrl()
+}
 
-// --- Додавання користувача (Імітація) ---
+// Пагінація
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--
+    updateUrl()
+  }
+}
+
+const nextPage = () => {
+  if (currentPage.value * itemsPerPage < totalUsers.value) {
+    currentPage.value++
+    updateUrl()
+  }
+}
+
+// Завантажуємо при старті та слідкуємо за змінами
+onMounted(() => fetchUsers())
+watch([searchQuery, currentPage], () => fetchUsers())
+
+// --- Мутації (Імітація) ---
 const handleAddUser = async (values: CreateUserDto) => {
   isMutating.value = true
   try {
     const newUser = await ServiceProvider.users.create(values)
-    // Сервер поверне об'єкт з ID. Ми самостійно додаємо його на початок нашого масиву.
     users.value.unshift(newUser)
     isAddModalOpen.value = false
   } catch (e: any) {
@@ -59,7 +98,6 @@ const handleAddUser = async (values: CreateUserDto) => {
   }
 }
 
-// --- Видалення користувача (Імітація) ---
 const requestDelete = (user: User) => {
   selectedUser.value = user
   isDeleteModalOpen.value = true
@@ -70,7 +108,6 @@ const confirmDelete = async () => {
   isMutating.value = true
   try {
     await ServiceProvider.users.delete(selectedUser.value.id)
-    // Вирізаємо видаленого юзера з нашого локального масиву
     users.value = users.value.filter((u) => u.id !== selectedUser.value!.id)
     isDeleteModalOpen.value = false
   } catch (e: any) {
@@ -81,9 +118,7 @@ const confirmDelete = async () => {
   }
 }
 
-// --- Редагування користувача (Маршрутизація) ---
 const requestEdit = (user: User) => {
-  // Перекидаємо на вкладений маршрут редагування
   router.push(`/users/${user.id}/edit`)
 }
 </script>
@@ -92,7 +127,6 @@ const requestEdit = (user: User) => {
   <div>
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold text-gray-800">Users Directory</h1>
-      <!-- Кнопка для відкриття модалки додавання -->
       <button
         @click="isAddModalOpen = true"
         class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors shadow-sm"
@@ -114,15 +148,39 @@ const requestEdit = (user: User) => {
       {{ globalError }}
     </div>
 
-    <ParticipantsTable
-      v-else
-      :users="users"
-      @request-edit="requestEdit"
-      @request-delete="requestDelete"
-    />
+    <div v-else>
+      <ParticipantsTable
+        :users="users"
+        @request-edit="requestEdit"
+        @request-delete="requestDelete"
+      />
 
-    <!-- Модалка додавання -->
-    <!-- Модалка додавання -->
+      <!-- Контроли пагінації -->
+      <div
+        class="flex items-center justify-between mt-4 bg-white p-4 rounded shadow-sm border border-gray-200"
+      >
+        <p class="text-sm text-gray-600">
+          Showing page <strong>{{ currentPage }}</strong> (Total: {{ totalUsers }} users)
+        </p>
+        <div class="flex gap-2">
+          <button
+            @click="prevPage"
+            :disabled="currentPage === 1"
+            class="px-4 py-2 border border-gray-300 rounded font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Previous
+          </button>
+          <button
+            @click="nextPage"
+            :disabled="currentPage * itemsPerPage >= totalUsers"
+            class="px-4 py-2 border border-gray-300 rounded font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+
     <AppModal :is-open="isAddModalOpen" title="Create New User" @close="isAddModalOpen = false">
       <RegistrationForm
         :is-loading="isMutating"
@@ -131,7 +189,6 @@ const requestEdit = (user: User) => {
       />
     </AppModal>
 
-    <!-- Модалка підтвердження видалення -->
     <AppModal :is-open="isDeleteModalOpen" title="Delete User?" @close="isDeleteModalOpen = false">
       <p class="text-gray-600 mb-6">
         Are you sure you want to delete
