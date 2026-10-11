@@ -1,0 +1,1 @@
+import{S as e,l as t,o as n}from"./runtime-core.esm-bundler-IFmrPBhm.js";import{t as r}from"./index-Y4lGOGTL.js";var i={},a={class:`p-6`};function o(r,i){return e(),t(`div`,a,[...i[0]||=[n(`h1`,{class:`text-2xl font-bold`},`Not Found Page`,-1)]])}var s=r(i,[[`render`,o]]);export{s as default};
