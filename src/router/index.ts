@@ -24,6 +24,22 @@ const router = createRouter({
       meta: { title: 'Users | Lottery App', requiresAuth: true },
     },
     {
+      path: '/users/:id',
+      name: 'user-details', // <-- Перенесли ім'я на рівень батька
+      component: () => import('../views/UserView.vue'),
+      props: true,
+      meta: { requiresAuth: true, title: 'User Profile | Lottery App' }, // <-- Перенесли title сюди
+      children: [
+        {
+          // Тепер тут лежить ТІЛЬКИ маршрут редагування, який має свій component
+          path: 'edit',
+          name: 'user-edit',
+          component: () => import('../views/UserEditView.vue'),
+          meta: { title: 'Edit User | Lottery App' },
+        },
+      ],
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('../views/LoginView.vue'),
