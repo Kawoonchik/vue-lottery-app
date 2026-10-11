@@ -1,85 +1,57 @@
 <script setup lang="ts">
-import type { Participant } from '../../App.vue'
-import SearchBar from '../ui/SearchBar.vue'
+import type { User } from '../../types/user'
 
 defineProps<{
-  participants: Participant[]
-  sortKey: 'name' | 'dateOfBirth' | null
-  sortOrder: 'asc' | 'desc'
+  users: User[]
 }>()
 
 const emit = defineEmits<{
-  (e: 'request-edit', participant: Participant): void
-  (e: 'request-delete', participant: Participant): void
-  (e: 'request-sort', key: 'name' | 'dateOfBirth'): void
-  (e: 'filter-by-name', query: string): void
+  (e: 'request-edit', user: User): void
+  (e: 'request-delete', user: User): void
 }>()
 </script>
 
 <template>
-  <div class="bg-white p-6 rounded shadow-sm border border-gray-200">
-    <SearchBar @filter-by-name="emit('filter-by-name', $event)" />
-
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm text-left text-gray-500">
-        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-          <tr>
-            <th scope="col" class="px-6 py-3">#</th>
-
-            <th
-              scope="col"
-              class="px-6 py-3 cursor-pointer hover:bg-gray-200 select-none"
-              @click="emit('request-sort', 'name')"
+  <div class="overflow-x-auto bg-white rounded shadow-sm border border-gray-200 mt-4">
+    <table class="w-full text-sm text-left text-gray-500">
+      <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+        <tr>
+          <th scope="col" class="px-6 py-3">ID</th>
+          <th scope="col" class="px-6 py-3">First Name</th>
+          <th scope="col" class="px-6 py-3">Last Name</th>
+          <th scope="col" class="px-6 py-3">Age / Gender</th>
+          <th scope="col" class="px-6 py-3">Email</th>
+          <th scope="col" class="px-6 py-3">Phone</th>
+          <th scope="col" class="px-6 py-3 text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="user in users" :key="user.id" class="border-b hover:bg-gray-50">
+          <td class="px-6 py-4 font-bold text-gray-400">{{ user.id }}</td>
+          <td class="px-6 py-4 font-medium text-gray-900">{{ user.firstName }}</td>
+          <td class="px-6 py-4 font-medium text-gray-900">{{ user.lastName }}</td>
+          <td class="px-6 py-4">{{ user.age }} y.o. / {{ user.gender }}</td>
+          <td class="px-6 py-4">{{ user.email }}</td>
+          <td class="px-6 py-4">{{ user.phone }}</td>
+          <td class="px-6 py-4 flex justify-center gap-3">
+            <button
+              @click="emit('request-edit', user)"
+              class="text-blue-500 hover:text-blue-700 underline text-xs font-medium"
             >
-              Name
-              <span v-if="sortKey === 'name'" class="ml-1">{{
-                sortOrder === 'asc' ? '↓' : '↑'
-              }}</span>
-            </th>
-
-            <th
-              scope="col"
-              class="px-6 py-3 cursor-pointer hover:bg-gray-200 select-none"
-              @click="emit('request-sort', 'dateOfBirth')"
+              Edit
+            </button>
+            <button
+              @click="emit('request-delete', user)"
+              class="text-red-500 hover:text-red-700 underline text-xs font-medium"
             >
-              Date of Birth
-              <span v-if="sortKey === 'dateOfBirth'" class="ml-1">{{
-                sortOrder === 'asc' ? '↓' : '↑'
-              }}</span>
-            </th>
-
-            <th scope="col" class="px-6 py-3">Email</th>
-            <th scope="col" class="px-6 py-3">Phone number</th>
-            <th scope="col" class="px-6 py-3 text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(participant, index) in participants" :key="participant.id" class="border-b">
-            <td class="px-6 py-4">{{ index + 1 }}</td>
-            <td class="px-6 py-4 font-medium text-gray-900">{{ participant.name }}</td>
-            <td class="px-6 py-4">{{ participant.dateOfBirth }}</td>
-            <td class="px-6 py-4">{{ participant.email }}</td>
-            <td class="px-6 py-4">{{ participant.phone }}</td>
-            <td class="px-6 py-4 flex justify-center gap-2">
-              <button
-                @click="emit('request-edit', participant)"
-                class="text-blue-500 hover:text-blue-700 underline text-xs"
-              >
-                Редагувати
-              </button>
-              <button
-                @click="emit('request-delete', participant)"
-                class="text-red-500 hover:text-red-700 underline text-xs"
-              >
-                Видалити
-              </button>
-            </td>
-          </tr>
-          <tr v-if="participants.length === 0">
-            <td colspan="6" class="px-6 py-4 text-center text-gray-400">No participants found.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+              Delete
+            </button>
+          </td>
+        </tr>
+        <tr v-if="users.length === 0">
+          <td colspan="7" class="px-6 py-8 text-center text-gray-400">No users found.</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>

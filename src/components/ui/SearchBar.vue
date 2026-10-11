@@ -1,12 +1,24 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
+
+const props = defineProps<{
+  initialValue?: string
+}>()
 
 const emit = defineEmits<{
   (e: 'filter-by-name', value: string): void
 }>()
 
-const searchQuery = ref('')
+const searchQuery = ref(props.initialValue || '')
 let timeout: ReturnType<typeof setTimeout>
+
+// Якщо props зміняться ззовні (через URL), оновлюємо інпут
+watch(
+  () => props.initialValue,
+  (newVal) => {
+    if (newVal !== undefined) searchQuery.value = newVal
+  },
+)
 
 watch(searchQuery, (newValue) => {
   clearTimeout(timeout)

@@ -1,120 +1,143 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import AppInput from '../ui/AppInput.vue'
-import AppButton from '../ui/AppButton.vue'
+import { Form, Field, ErrorMessage } from 'vee-validate'
+import * as yup from 'yup'
+import type { CreateUserDto } from '../../types/user'
 
-const emit = defineEmits<{
-  (e: 'add-participant', participant: any): void
+const props = defineProps<{
+  initialData?: any // Дані для підстановки при редагуванні
+  isLoading?: boolean
 }>()
 
-const initialFormState = {
-  name: '',
-  dateOfBirth: '',
-  email: '',
-  phone: '',
-}
+const emit = defineEmits<{
+  (e: 'submit', values: CreateUserDto): void
+  (e: 'cancel'): void
+}>()
 
-const form = reactive({ ...initialFormState })
-const errors = reactive({ ...initialFormState })
-const isSubmitted = ref(false)
+// Схема валідації VeeValidate + Yup для всіх обов'язкових полів
+const schema = yup.object({
+  firstName: yup.string().required('First name is required'),
+  lastName: yup.string().required('Last name is required'),
+  username: yup.string().required('Username is required'),
+  email: yup.string().email('Invalid email format').required('Email is required'),
+  password: yup.string().min(6, 'Min 6 characters required').required('Password is required'),
+  age: yup
+    .number()
+    .typeError('Must be a valid number')
+    .min(1, 'Invalid age')
+    .required('Age is required'),
+  gender: yup
+    .string()
+    .oneOf(['male', 'female'], 'Must be male or female')
+    .required('Gender is required'),
+  phone: yup.string().required('Phone is required'),
+})
 
-const validateForm = () => {
-  let isValid = true
-  Object.keys(errors).forEach((key) => (errors[key as keyof typeof errors] = ''))
-
-  if (!form.name.trim()) {
-    errors.name = 'This value is required'
-    isValid = false
-  }
-
-  if (!form.dateOfBirth) {
-    errors.dateOfBirth = 'This value is required'
-    isValid = false
-  } else {
-    const selectedDate = new Date(form.dateOfBirth)
-    const today = new Date()
-    if (selectedDate > today) {
-      errors.dateOfBirth = 'Date cannot be in the future'
-      isValid = false
-    }
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/
-  if (!form.email.trim()) {
-    errors.email = 'This value is required'
-    isValid = false
-  } else if (!emailRegex.test(form.email)) {
-    errors.email = 'Invalid email format'
-    isValid = false
-  }
-
-  const phoneRegex = /^\+380\d{9}$/
-  if (!form.phone.trim()) {
-    errors.phone = 'This value is required'
-    isValid = false
-  } else if (!phoneRegex.test(form.phone)) {
-    errors.phone = 'Format: +380XXXXXXXXX'
-    isValid = false
-  }
-
-  return isValid
-}
-
-const handleSubmit = () => {
-  isSubmitted.value = true
-  if (validateForm()) {
-    emit('add-participant', {
-      id: crypto.randomUUID(),
-      name: form.name.trim(),
-      dateOfBirth: form.dateOfBirth,
-      email: form.email.trim(),
-      phone: form.phone.trim(),
-    })
-
-    isSubmitted.value = false
-    Object.assign(form, initialFormState)
-    Object.keys(errors).forEach((key) => (errors[key as keyof typeof errors] = ''))
-  }
+const onSubmit = (values: any) => {
+  emit('submit', values as CreateUserDto)
 }
 </script>
 
 <template>
-  <div class="bg-white p-6 rounded shadow-sm border border-gray-200">
-    <div class="mb-6">
-      <h2 class="text-sm font-bold text-gray-800 uppercase">Register form</h2>
-      <p class="text-gray-400 text-xs mt-1">Please fill in all the fields.</p>
+  <Form
+    :validation-schema="schema"
+    :initial-values="initialData"
+    @submit="onSubmit"
+    class="space-y-4"
+  >
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+        <Field
+          name="firstName"
+          type="text"
+          class="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500"
+        />
+        <ErrorMessage name="firstName" class="text-red-500 text-xs mt-1 block" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+        <Field
+          name="lastName"
+          type="text"
+          class="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500"
+        />
+        <ErrorMessage name="lastName" class="text-red-500 text-xs mt-1 block" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+        <Field
+          name="username"
+          type="text"
+          class="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500"
+        />
+        <ErrorMessage name="username" class="text-red-500 text-xs mt-1 block" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <Field
+          name="email"
+          type="email"
+          class="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500"
+        />
+        <ErrorMessage name="email" class="text-red-500 text-xs mt-1 block" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <Field
+          name="password"
+          type="password"
+          class="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500"
+        />
+        <ErrorMessage name="password" class="text-red-500 text-xs mt-1 block" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Age</label>
+        <Field
+          name="age"
+          type="number"
+          class="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500"
+        />
+        <ErrorMessage name="age" class="text-red-500 text-xs mt-1 block" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+        <Field
+          name="gender"
+          as="select"
+          class="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500 bg-white"
+        >
+          <option value="" disabled>Select gender...</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </Field>
+        <ErrorMessage name="gender" class="text-red-500 text-xs mt-1 block" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+        <Field
+          name="phone"
+          type="text"
+          class="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500"
+        />
+        <ErrorMessage name="phone" class="text-red-500 text-xs mt-1 block" />
+      </div>
     </div>
 
-    <form @submit.prevent="handleSubmit" @keydown.enter.prevent="handleSubmit">
-      <AppInput
-        v-model="form.name"
-        label="Name"
-        placeholder="Enter user name"
-        :error="isSubmitted ? errors.name : ''"
-      />
-      <AppInput
-        v-model="form.dateOfBirth"
-        label="Date of Birth"
-        type="date"
-        placeholder="mm/dd/yyyy"
-        :error="isSubmitted ? errors.dateOfBirth : ''"
-      />
-      <AppInput
-        v-model="form.email"
-        label="Email"
-        placeholder="Enter email"
-        :error="isSubmitted ? errors.email : ''"
-      />
-      <AppInput
-        v-model="form.phone"
-        label="Phone number"
-        placeholder="Enter Phone number"
-        :error="isSubmitted ? errors.phone : ''"
-      />
-
-      <div class="flex justify-end mt-4 pt-2 border-t border-gray-100">
-        <AppButton type="submit">Save</AppButton>
-      </div>
-    </form>
-  </div>
+    <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+      <button
+        type="button"
+        @click="emit('cancel')"
+        class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded transition-colors font-medium"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        :disabled="isLoading"
+        class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors font-medium disabled:opacity-50"
+      >
+        {{ isLoading ? 'Saving...' : 'Save' }}
+      </button>
+    </div>
+  </Form>
 </template>
