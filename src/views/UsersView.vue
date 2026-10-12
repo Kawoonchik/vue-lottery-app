@@ -151,7 +151,7 @@ const removeWinner = (id: number) => {
           :disabled="winners.length === 3"
           class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          🎁 Draw Winner
+          Draw Winner
         </button>
         <button
           @click="isAddModalOpen = true"
@@ -178,9 +178,7 @@ const removeWinner = (id: number) => {
         >
           Remove ❌
         </button>
-        <h2 class="font-semibold text-gray-800 pr-20">
-          {{ user.firstName }} {{ user.lastName }}
-        </h2>
+        <h2 class="font-semibold text-gray-800 pr-20">{{ user.firstName }} {{ user.lastName }}</h2>
         <p class="mt-2 text-sm text-gray-600">Age: {{ user.age }}</p>
         <p class="mt-1 text-sm text-gray-600 break-all">{{ user.email }}</p>
       </article>
