@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter, RouterView } from 'vue-router'
-import { ServiceProvider } from '../services/service-provider'
+import { useUsersStore } from '../stores/usersStore'
 import type { User } from '../types/user'
 
 const props = defineProps<{
@@ -10,16 +10,18 @@ const props = defineProps<{
 
 const route = useRoute()
 const router = useRouter()
+const usersStore = useUsersStore()
 const user = ref<User | null>(null)
 const isLoading = ref(true)
 const error = ref('')
 
 const fetchUser = async () => {
   isLoading.value = true
+  error.value = ''
   try {
-    user.value = await ServiceProvider.users.getById(props.id)
+    user.value = await usersStore.getUserById(Number(props.id))
   } catch (e: any) {
-    error.value = 'Failed to load user data'
+    error.value = 'Failed to load user data: ' + e.message
   } finally {
     isLoading.value = false
   }

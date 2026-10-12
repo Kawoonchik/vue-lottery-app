@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ServiceProvider } from '../services/service-provider'
 import type { User, CreateUserDto } from '../types/user'
+import { useUsersStore } from '../stores/usersStore'
 import ParticipantsTable from '../components/blocks/ParticipantsTable.vue'
 import SearchBar from '../components/ui/SearchBar.vue'
 import AppModal from '../components/ui/AppModal.vue'
@@ -10,17 +11,13 @@ import RegistrationForm from '../components/blocks/RegistrationForm.vue'
 
 const route = useRoute()
 const router = useRouter()
+const usersStore = useUsersStore()
 
-const users = ref<User[]>([])
 const isLoading = ref(false)
 const isMutating = ref(false)
 const globalError = ref<string | null>(null)
 
-//URL State
-const searchQuery = ref((route.query.q as string) || '')
-const currentPage = ref(Number(route.query.page) || 1)
 const itemsPerPage = 10
-const totalUsers = ref(0)
 
 // Модалки
 const isAddModalOpen = ref(false)
@@ -29,19 +26,19 @@ const selectedUser = ref<User | null>(null)
 const winners = ref<User[]>([])
 
 //Завантаження
-const fetchUsers = async () => {
+const fetchUsers = async (page: number, query: string, updateRoute = false) => {
   isLoading.value = true
   globalError.value = null
   try {
-    const skip = (currentPage.value - 1) * itemsPerPage
-    const data = await ServiceProvider.users.getAll({
-      q: searchQuery.value,
-      limit: itemsPerPage,
-      skip: skip,
-    })
-
-    users.value = data.items
-    totalUsers.value = data.total
+    await usersStore.fetchUsers(page, query)
+    if (updateRoute) {
+      router.replace({
+        query: {
+          q: query || undefined,
+          page: page > 1 ? page : undefined,
+        },
+      })
+    }
   } catch (e: any) {
     globalError.value = 'Failed to load users: ' + e.message
   } finally {
@@ -49,44 +46,35 @@ const fetchUsers = async () => {
   }
 }
 
-const updateUrl = () => {
-  router.replace({
-    query: {
-      q: searchQuery.value ? searchQuery.value : undefined,
-      page: currentPage.value > 1 ? currentPage.value : undefined,
-    },
-  })
-}
-
 const handleSearch = (query: string) => {
-  searchQuery.value = query
-  currentPage.value = 1
-  updateUrl()
+  if (query === usersStore.searchQuery) return
+  fetchUsers(1, query, true)
 }
 
 // Пагінація
 const prevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--
-    updateUrl()
+  if (usersStore.currentPage > 1) {
+    fetchUsers(usersStore.currentPage - 1, usersStore.searchQuery, true)
   }
 }
 
 const nextPage = () => {
-  if (currentPage.value * itemsPerPage < totalUsers.value) {
-    currentPage.value++
-    updateUrl()
+  if (usersStore.currentPage * itemsPerPage < usersStore.totalUsers) {
+    fetchUsers(usersStore.currentPage + 1, usersStore.searchQuery, true)
   }
 }
 
-onMounted(() => fetchUsers())
-watch([searchQuery, currentPage], () => fetchUsers())
+onMounted(() => {
+  const page = Number(route.query.page) || 1
+  const query = (route.query.q as string) || ''
+  fetchUsers(page, query)
+})
 
 const handleAddUser = async (values: CreateUserDto) => {
   isMutating.value = true
   try {
     const newUser = await ServiceProvider.users.create(values)
-    users.value.unshift(newUser)
+    usersStore.addUser(newUser)
     isAddModalOpen.value = false
   } catch (e: any) {
     globalError.value = 'Error creating user'
@@ -106,7 +94,7 @@ const confirmDelete = async () => {
   isMutating.value = true
   try {
     await ServiceProvider.users.delete(deletedUserId)
-    users.value = users.value.filter((u) => u.id !== deletedUserId)
+    usersStore.removeUser(deletedUserId)
     winners.value = winners.value.filter((winner) => winner.id !== deletedUserId)
     isDeleteModalOpen.value = false
   } catch (e: any) {
@@ -124,7 +112,7 @@ const requestEdit = (user: User) => {
 const drawWinner = () => {
   if (winners.value.length >= 3) return
 
-  const eligibleUsers = users.value.filter(
+  const eligibleUsers = usersStore.users.filter(
     (user) => !winners.value.some((winner) => winner.id === user.id),
   )
   if (eligibleUsers.length === 0) return
@@ -184,7 +172,7 @@ const removeWinner = (id: number) => {
       </article>
     </section>
 
-    <SearchBar @filter-by-name="handleSearch" :initial-value="searchQuery" />
+    <SearchBar @filter-by-name="handleSearch" :initial-value="usersStore.searchQuery" />
 
     <div v-if="isLoading" class="text-center py-8 text-blue-500 font-medium animate-pulse">
       Loading users from server...
@@ -199,7 +187,8 @@ const removeWinner = (id: number) => {
 
     <div v-else>
       <ParticipantsTable
-        :users="users"
+        :users="usersStore.users"
+        @request-details="router.push('/users/' + $event.id)"
         @request-edit="requestEdit"
         @request-delete="requestDelete"
       />
@@ -208,19 +197,20 @@ const removeWinner = (id: number) => {
         class="flex items-center justify-between mt-4 bg-white p-4 rounded shadow-sm border border-gray-200"
       >
         <p class="text-sm text-gray-600">
-          Showing page <strong>{{ currentPage }}</strong> (Total: {{ totalUsers }} users)
+          Showing page <strong>{{ usersStore.currentPage }}</strong> (Total:
+          {{ usersStore.totalUsers }} users)
         </p>
         <div class="flex gap-2">
           <button
             @click="prevPage"
-            :disabled="currentPage === 1"
+            :disabled="usersStore.currentPage === 1"
             class="px-4 py-2 border border-gray-300 rounded font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Previous
           </button>
           <button
             @click="nextPage"
-            :disabled="currentPage * itemsPerPage >= totalUsers"
+            :disabled="usersStore.currentPage * itemsPerPage >= usersStore.totalUsers"
             class="px-4 py-2 border border-gray-300 rounded font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Next

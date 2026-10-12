@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ServiceProvider } from '../services/service-provider'
+import { useUsersStore } from '../stores/usersStore'
 import RegistrationForm from '../components/blocks/RegistrationForm.vue'
 import type { User, UpdateUserDto } from '../types/user'
 
@@ -14,6 +15,7 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+const usersStore = useUsersStore()
 const isMutating = ref(false)
 const updateError = ref('')
 
@@ -21,9 +23,10 @@ const handleUpdate = async (values: UpdateUserDto) => {
   isMutating.value = true
   updateError.value = ''
   try {
-    const updatedUser = await ServiceProvider.users.update(props.user.id, values)
+    const updatedData = await ServiceProvider.users.update(props.user.id, values)
+    usersStore.updateUser(props.user.id, updatedData)
 
-    emit('update-success', updatedUser)
+    emit('update-success', updatedData)
 
     router.push(`/users/${props.user.id}`)
   } catch (e: any) {

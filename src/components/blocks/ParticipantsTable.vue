@@ -6,6 +6,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
+  (e: 'request-details', user: User): void
   (e: 'request-edit', user: User): void
   (e: 'request-delete', user: User): void
 }>()
@@ -34,6 +35,12 @@ const emit = defineEmits<{
           <td class="px-6 py-4">{{ user.email }}</td>
           <td class="px-6 py-4">{{ user.phone }}</td>
           <td class="px-6 py-4 flex justify-center gap-3">
+            <button
+              @click="emit('request-details', user)"
+              class="text-gray-500 hover:text-gray-700 underline text-xs font-medium"
+            >
+              Details
+            </button>
             <button
               @click="emit('request-edit', user)"
               class="text-blue-500 hover:text-blue-700 underline text-xs font-medium"
