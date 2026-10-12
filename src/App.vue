@@ -6,14 +6,12 @@ import AuthLayout from './layouts/AuthLayout.vue'
 
 const route = useRoute()
 
-// Динамічно визначаємо, який макет використовувати
 const layout = computed(() => {
   return route.meta.layout === 'AuthLayout' ? AuthLayout : DefaultLayout
 })
 </script>
 
 <template>
-  <!-- Спеціальний тег <component :is="..."> динамічно рендерить переданий йому компонент -->
   <component :is="layout">
     <RouterView />
   </component>

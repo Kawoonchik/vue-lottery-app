@@ -11,8 +11,6 @@ export interface User {
   image?: string
 }
 
-// Omit створює новий тип, беручи всі поля з User, окрім 'id'
 export type CreateUserDto = Omit<User, 'id'>
 
-// Partial робить усі поля типу CreateUserDto необов'язковими (для оновлення частини даних)
 export type UpdateUserDto = Partial<CreateUserDto>

@@ -16,23 +16,23 @@ const isLoading = ref(false)
 const isMutating = ref(false)
 const globalError = ref<string | null>(null)
 
-// --- URL State ---
+//URL State
 const searchQuery = ref((route.query.q as string) || '')
 const currentPage = ref(Number(route.query.page) || 1)
 const itemsPerPage = 10
-const totalUsers = ref(0) // Зберігаємо загальну кількість для блокування кнопки Next
+const totalUsers = ref(0)
 
 // Модалки
 const isAddModalOpen = ref(false)
 const isDeleteModalOpen = ref(false)
 const selectedUser = ref<User | null>(null)
+const winners = ref<User[]>([])
 
-// --- Завантаження ---
+//Завантаження
 const fetchUsers = async () => {
   isLoading.value = true
   globalError.value = null
   try {
-    // Розраховуємо скільки записів пропустити
     const skip = (currentPage.value - 1) * itemsPerPage
     const data = await ServiceProvider.users.getAll({
       q: searchQuery.value,
@@ -41,7 +41,7 @@ const fetchUsers = async () => {
     })
 
     users.value = data.items
-    totalUsers.value = data.total // Отримуємо загальну кількість юзерів з АРІ
+    totalUsers.value = data.total
   } catch (e: any) {
     globalError.value = 'Failed to load users: ' + e.message
   } finally {
@@ -49,7 +49,6 @@ const fetchUsers = async () => {
   }
 }
 
-// Оновлення URL без перезавантаження
 const updateUrl = () => {
   router.replace({
     query: {
@@ -61,7 +60,7 @@ const updateUrl = () => {
 
 const handleSearch = (query: string) => {
   searchQuery.value = query
-  currentPage.value = 1 // При новому пошуку завжди скидаємо на першу сторінку
+  currentPage.value = 1
   updateUrl()
 }
 
@@ -80,11 +79,9 @@ const nextPage = () => {
   }
 }
 
-// Завантажуємо при старті та слідкуємо за змінами
 onMounted(() => fetchUsers())
 watch([searchQuery, currentPage], () => fetchUsers())
 
-// --- Мутації (Імітація) ---
 const handleAddUser = async (values: CreateUserDto) => {
   isMutating.value = true
   try {
@@ -105,10 +102,12 @@ const requestDelete = (user: User) => {
 
 const confirmDelete = async () => {
   if (!selectedUser.value) return
+  const deletedUserId = selectedUser.value.id
   isMutating.value = true
   try {
-    await ServiceProvider.users.delete(selectedUser.value.id)
-    users.value = users.value.filter((u) => u.id !== selectedUser.value!.id)
+    await ServiceProvider.users.delete(deletedUserId)
+    users.value = users.value.filter((u) => u.id !== deletedUserId)
+    winners.value = winners.value.filter((winner) => winner.id !== deletedUserId)
     isDeleteModalOpen.value = false
   } catch (e: any) {
     globalError.value = 'Error deleting user'
@@ -121,19 +120,71 @@ const confirmDelete = async () => {
 const requestEdit = (user: User) => {
   router.push(`/users/${user.id}/edit`)
 }
+
+const drawWinner = () => {
+  if (winners.value.length >= 3) return
+
+  const eligibleUsers = users.value.filter(
+    (user) => !winners.value.some((winner) => winner.id === user.id),
+  )
+  if (eligibleUsers.length === 0) return
+
+  const winnerIndex = Math.floor(Math.random() * eligibleUsers.length)
+  const winner = eligibleUsers[winnerIndex]
+  if (!winner) return
+
+  winners.value.push(winner)
+}
+
+const removeWinner = (id: number) => {
+  winners.value = winners.value.filter((winner) => winner.id !== id)
+}
 </script>
 
 <template>
   <div>
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold text-gray-800">Users Directory</h1>
-      <button
-        @click="isAddModalOpen = true"
-        class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors shadow-sm"
-      >
-        + Add User
-      </button>
+      <div class="flex gap-3">
+        <button
+          @click="drawWinner"
+          :disabled="winners.length === 3"
+          class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          🎁 Draw Winner
+        </button>
+        <button
+          @click="isAddModalOpen = true"
+          class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors shadow-sm"
+        >
+          + Add User
+        </button>
+      </div>
     </div>
+
+    <section
+      v-if="winners.length > 0"
+      class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"
+      aria-label="Lottery winners"
+    >
+      <article
+        v-for="user in winners"
+        :key="user.id"
+        class="relative bg-yellow-50 border border-yellow-200 rounded p-4 shadow-sm"
+      >
+        <button
+          @click="removeWinner(user.id)"
+          class="absolute top-2 right-2 text-sm text-gray-600 hover:text-red-600"
+        >
+          Remove ❌
+        </button>
+        <h2 class="font-semibold text-gray-800 pr-20">
+          {{ user.firstName }} {{ user.lastName }}
+        </h2>
+        <p class="mt-2 text-sm text-gray-600">Age: {{ user.age }}</p>
+        <p class="mt-1 text-sm text-gray-600 break-all">{{ user.email }}</p>
+      </article>
+    </section>
 
     <SearchBar @filter-by-name="handleSearch" :initial-value="searchQuery" />
 
@@ -155,7 +206,6 @@ const requestEdit = (user: User) => {
         @request-delete="requestDelete"
       />
 
-      <!-- Контроли пагінації -->
       <div
         class="flex items-center justify-between mt-4 bg-white p-4 rounded shadow-sm border border-gray-200"
       >

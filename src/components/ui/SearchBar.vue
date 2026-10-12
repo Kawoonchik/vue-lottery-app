@@ -12,7 +12,6 @@ const emit = defineEmits<{
 const searchQuery = ref(props.initialValue || '')
 let timeout: ReturnType<typeof setTimeout>
 
-// Якщо props зміняться ззовні (через URL), оновлюємо інпут
 watch(
   () => props.initialValue,
   (newVal) => {

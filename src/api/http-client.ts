@@ -1,6 +1,6 @@
 const BASE_URL = import.meta.env.VITE_API_URL
 
-// Допоміжні функції для роботи з localStorage
+// localStorage
 const getAccessToken = () => localStorage.getItem('accessToken')
 const getRefreshToken = () => {
   const userStr = localStorage.getItem('user')
@@ -8,7 +8,6 @@ const getRefreshToken = () => {
 }
 
 export async function http<T>(path: string, options: RequestInit = {}): Promise<T> {
-  // 1. Автоматично додаємо токен до КОЖНОГО запиту
   const token = getAccessToken()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -21,16 +20,13 @@ export async function http<T>(path: string, options: RequestInit = {}): Promise<
 
   const config: RequestInit = { ...options, headers }
 
-  // Робимо оригінальний запит
   let response = await fetch(`${BASE_URL}${path}`, config)
 
-  // 2. Перехоплювач (Interceptor): якщо сервер каже 401 (Токен прострочено)
   if (response.status === 401 && path !== '/auth/login' && path !== '/auth/refresh') {
     const refreshToken = getRefreshToken()
 
     if (refreshToken) {
       try {
-        // Пробуємо отримати новий токен
         const refreshResponse = await fetch(`${BASE_URL}/auth/refresh`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -40,7 +36,6 @@ export async function http<T>(path: string, options: RequestInit = {}): Promise<
         if (refreshResponse.ok) {
           const refreshData = await refreshResponse.json()
 
-          // Зберігаємо новий токен у пам'ять
           localStorage.setItem('accessToken', refreshData.accessToken)
           const userStr = localStorage.getItem('user')
           if (userStr) {
@@ -50,14 +45,12 @@ export async function http<T>(path: string, options: RequestInit = {}): Promise<
             localStorage.setItem('user', JSON.stringify(userObj))
           }
 
-          // Повторюємо оригінальний запит, але ВЖЕ З НОВИМ токеном
           headers['Authorization'] = `Bearer ${refreshData.accessToken}`
           response = await fetch(`${BASE_URL}${path}`, { ...config, headers })
         } else {
           throw new Error('Refresh token expired')
         }
       } catch (e) {
-        // Якщо навіть refresh token прострочений — розлогінюємо і викидаємо на логін
         localStorage.removeItem('accessToken')
         localStorage.removeItem('user')
         window.location.href = '/login'
@@ -66,7 +59,6 @@ export async function http<T>(path: string, options: RequestInit = {}): Promise<
     }
   }
 
-  // Обробка інших помилок
   if (!response.ok) {
     throw new Error(`HTTP ${response.status} : ${response.statusText}`)
   }

@@ -21,7 +21,6 @@ export class UserService
   ): Promise<{ items: User[]; total: number }> {
     const { limit = 10, skip = 0, q = '' } = params
 
-    // Якщо передано пошуковий запит, використовуємо ендпоїнт пошуку
     let url = `/users?limit=${limit}&skip=${skip}`
     if (q) {
       url = `/users/search?q=${q}&limit=${limit}&skip=${skip}`

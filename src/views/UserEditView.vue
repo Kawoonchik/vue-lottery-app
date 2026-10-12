@@ -21,10 +21,8 @@ const handleUpdate = async (values: UpdateUserDto) => {
   isMutating.value = true
   updateError.value = ''
   try {
-    // Зберігаємо те, що повернув сервер (це будуть оновлені дані)
     const updatedUser = await ServiceProvider.users.update(props.user.id, values)
 
-    // Передаємо ці нові дані батьківському компоненту
     emit('update-success', updatedUser)
 
     router.push(`/users/${props.user.id}`)
@@ -47,7 +45,6 @@ const handleUpdate = async (values: UpdateUserDto) => {
       {{ updateError }}
     </div>
 
-    <!-- Перевикористовуємо форму, передаючи поточні дані юзера в initial-data -->
     <RegistrationForm
       :initial-data="user"
       :is-loading="isMutating"

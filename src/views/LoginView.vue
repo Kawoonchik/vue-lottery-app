@@ -12,7 +12,6 @@ const route = useRoute()
 const isLoading = ref(false)
 const globalError = ref('')
 
-// Схема валідації VeeValidate + Yup
 const schema = yup.object({
   username: yup.string().required('Username is required'),
   password: yup
@@ -21,7 +20,6 @@ const schema = yup.object({
     .required('Password is required'),
 })
 
-// Функція спрацює лише якщо валідація пройдена успішно
 const onSubmit = async (values: any) => {
   isLoading.value = true
   globalError.value = ''
@@ -29,11 +27,10 @@ const onSubmit = async (values: any) => {
   try {
     await authStore.login(values.username, values.password)
 
-    // Повертаємо юзера туди, куди він намагався зайти до логіну, або на сторінку /users
     const redirectPath = route.query.redirect?.toString() || '/users'
     router.push(redirectPath)
   } catch (e: any) {
-    console.error('Login error:', e) // Виводимо реальну помилку в консоль
+    console.error('Login error:', e)
     globalError.value = `Помилка: ${e.message}`
   } finally {
     isLoading.value = false
@@ -45,9 +42,7 @@ const onSubmit = async (values: any) => {
   <div class="bg-white p-8 rounded shadow-md w-full max-w-sm border border-gray-200">
     <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Login</h1>
 
-    <!-- Компонент Form із VeeValidate -->
     <Form :validation-schema="schema" @submit="onSubmit" class="space-y-4">
-      <!-- Помилка від сервера (якщо невірний пароль) -->
       <div
         v-if="globalError"
         class="p-3 bg-red-50 text-red-600 rounded border border-red-200 text-sm"
@@ -57,7 +52,6 @@ const onSubmit = async (values: any) => {
 
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-        <!-- Компонент Field із VeeValidate замінює звичайний input -->
         <Field
           name="username"
           type="text"
