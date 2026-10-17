@@ -35,7 +35,15 @@ onMounted(() => {
 <template>
   <div>
     <button
-      @click="router.push('/users')"
+      @click="
+        router.push({
+          path: '/users',
+          query: {
+            q: usersStore.searchQuery || undefined,
+            page: usersStore.currentPage > 1 ? String(usersStore.currentPage) : undefined,
+          },
+        })
+      "
       class="mb-4 text-blue-500 hover:underline text-sm font-medium"
     >
       ← Back to Directory

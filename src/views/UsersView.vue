@@ -65,8 +65,10 @@ const nextPage = () => {
 }
 
 onMounted(() => {
-  const page = Number(route.query.page) || 1
-  const query = (route.query.q as string) || ''
+  const routePage = Number(route.query.page)
+  const page = route.query.page === undefined ? usersStore.currentPage : routePage || 1
+  const query =
+    route.query.q === undefined ? usersStore.searchQuery : (route.query.q as string) || ''
   fetchUsers(page, query)
 })
 

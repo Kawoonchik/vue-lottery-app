@@ -12,7 +12,7 @@ export const useUsersStore = defineStore('users', () => {
   const searchQuery = ref('')
 
   const fetchUsers = async (page: number, query: string) => {
-    if (page === currentPage.value && query === searchQuery.value && users.value.length > 0) {
+    if (users.value.length > 0 && currentPage.value === page && searchQuery.value === query) {
       return
     }
 
