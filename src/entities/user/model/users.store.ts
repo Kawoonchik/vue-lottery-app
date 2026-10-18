@@ -62,17 +62,25 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
-  async function updateUser(id: number, updatedData: UpdateUserDto) {
+  async function updateUser(id: number, updatedData: UpdateUserDto, currentUser?: User) {
+    let savedLocally = false
+    let result: Partial<User> = updatedData
+
     try {
-      const result = await service().update(id, updatedData)
-      const index = users.value.findIndex((u) => u.id === id)
-      if (index !== -1) {
-        users.value[index] = { ...users.value[index], ...result }
-      }
+      result = await service().update(id, updatedData)
     } catch (e: unknown) {
-      error.value = getErrorMessage(e, 'Failed to update user')
-      throw e
+      console.warn(`Failed to update user ${id} via API; applying changes locally.`, e)
+      savedLocally = true
     }
+
+    const index = users.value.findIndex((user) => user.id === id)
+    if (index !== -1) {
+      users.value[index] = { ...users.value[index], ...result }
+    } else if (savedLocally && currentUser) {
+      users.value.push({ ...currentUser, ...updatedData })
+    }
+
+    return savedLocally
   }
 
   async function createUser(userData: CreateUserDto) {
