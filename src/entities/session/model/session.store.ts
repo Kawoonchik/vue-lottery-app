@@ -1,32 +1,25 @@
-import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { ServiceProvider } from '@/shared/api'
-import type { LoginResponse } from '../api/auth.service'
+import { defineStore } from 'pinia'
 
-export const useSessionStore = defineStore('auth', () => {
-  const token = ref<string | null>(localStorage.getItem('accessToken'))
-  const user = ref<Partial<LoginResponse> | null>(
-    JSON.parse(localStorage.getItem('user') || 'null'),
-  )
+const STORAGE_KEY = 'session'
 
-  const isAuthenticated = computed(() => !!token.value)
+export const useSessionStore = defineStore('session', () => {
+  //State)
+  const accessToken = ref<string | null>(localStorage.getItem(`${STORAGE_KEY}:token`))
 
-  const login = async (username: string, password: string) => {
-    const data = await ServiceProvider.auth.login(username, password)
+  // Getters)
+  const isAuthenticated = computed(() => accessToken.value !== null)
 
-    token.value = data.accessToken
-    user.value = data
-
-    localStorage.setItem('accessToken', data.accessToken)
-    localStorage.setItem('user', JSON.stringify(data))
+  // Actions)
+  function setSession(token: string) {
+    accessToken.value = token
+    localStorage.setItem(`${STORAGE_KEY}:token`, token)
   }
 
-  const logout = () => {
-    token.value = null
-    user.value = null
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('user')
+  function clearSession() {
+    accessToken.value = null
+    localStorage.removeItem(`${STORAGE_KEY}:token`)
   }
 
-  return { token, user, isAuthenticated, login, logout }
+  return { accessToken, isAuthenticated, setSession, clearSession }
 })

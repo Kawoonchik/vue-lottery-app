@@ -1,4 +1,5 @@
-import '@/app/assets/main.scss'
+// @ts-expect-error Vite processes SCSS imports at runtime.
+import './assets/main.scss'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

@@ -1,62 +1,94 @@
+import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
 import { ServiceProvider } from '@/shared/api'
-import type { User } from './types'
-
-const itemsPerPage = 10
+import type { UserService } from '../api/user.service'
+import type { User, CreateUserDto, UpdateUserDto } from './types'
 
 export const useUsersStore = defineStore('users', () => {
   const users = ref<User[]>([])
-  const totalUsers = ref(0)
-  const currentPage = ref(1)
-  const searchQuery = ref('')
+  const total = ref(0)
+  const isLoading = ref(false)
+  const error = ref<string | null>(null)
 
-  const fetchUsers = async (page: number, query: string) => {
-    if (page === currentPage.value && query === searchQuery.value && users.value.length > 0) {
+  const currentPage = ref(1)
+  const currentQuery = ref('')
+
+  const hasUsers = computed(() => users.value.length > 0)
+
+  //сервіс із реєстру
+  const service = () => ServiceProvider.get<UserService>('users')
+
+  async function fetchUsers(limit = 10, skip = 0, search = '') {
+    const page = Math.floor(skip / limit) + 1
+
+    if (hasUsers.value && currentPage.value === page && currentQuery.value === search) {
       return
     }
 
-    const data = await ServiceProvider.users.getAll({
-      q: query,
-      limit: itemsPerPage,
-      skip: (page - 1) * itemsPerPage,
-    })
+    isLoading.value = true
+    error.value = null
+    try {
+      let data
+      if (search) {
+        data = await service().search(search)
+      } else {
+        data = await service().getAll({ limit, skip })
+      }
 
-    users.value = data.items
-    totalUsers.value = data.total
-    currentPage.value = page
-    searchQuery.value = query
+      users.value = 'users' in data ? data.users : data.items
+      total.value = data.total
+      currentPage.value = page
+      currentQuery.value = search
+    } catch (e: any) {
+      error.value = e.message || 'Failed to load users'
+    } finally {
+      isLoading.value = false
+    }
   }
 
-  const getUserById = async (id: number): Promise<User> => {
-    const user = users.value.find((item) => item.id === id)
-    if (user) return user
-
-    return ServiceProvider.users.getById(id)
+  //Імітація змін
+  async function removeUser(id: number) {
+    try {
+      await service().delete(id)
+      users.value = users.value.filter((u) => u.id !== id)
+    } catch (e: any) {
+      error.value = e.message
+    }
   }
 
-  const addUser = (user: User) => {
-    users.value.unshift(user)
+  async function updateUser(id: number, updatedData: UpdateUserDto) {
+    try {
+      const result = await service().update(id, updatedData)
+      const index = users.value.findIndex((u) => u.id === id)
+      if (index !== -1) {
+        users.value[index] = { ...users.value[index], ...result }
+      }
+    } catch (e: any) {
+      error.value = e.message
+    }
   }
 
-  const updateUser = (id: number, updatedUser: User) => {
-    const index = users.value.findIndex((user) => user.id === id)
-    if (index !== -1) users.value[index] = updatedUser
-  }
-
-  const removeUser = (id: number) => {
-    users.value = users.value.filter((user) => user.id !== id)
+  async function createUser(userData: CreateUserDto) {
+    try {
+      const result = await service().create(userData)
+      //Додаємо нового фейкового юзера на початок масиву
+      users.value.unshift(result)
+    } catch (e: any) {
+      error.value = e.message
+    }
   }
 
   return {
     users,
-    totalUsers,
+    total,
+    isLoading,
+    error,
+    hasUsers,
     currentPage,
-    searchQuery,
+    currentQuery,
     fetchUsers,
-    getUserById,
-    addUser,
-    updateUser,
     removeUser,
+    updateUser,
+    createUser,
   }
 })

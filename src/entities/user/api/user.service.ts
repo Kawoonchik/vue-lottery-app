@@ -50,4 +50,8 @@ export class UserService
   async delete(id: number | string): Promise<void> {
     await http(`/users/${id}`, { method: 'DELETE' })
   }
+
+  async search(query: string) {
+    return http<{ users: User[]; total: number }>(`/users/search?q=${query}`)
+  }
 }
