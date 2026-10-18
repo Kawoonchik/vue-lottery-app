@@ -2,6 +2,7 @@ import './assets/main.scss'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import PrimeVue from 'primevue/config'
 import Aura from '@primevue/themes/aura'
 import ToastService from 'primevue/toastservice'
@@ -12,6 +13,8 @@ import { registerServices } from './providers/services'
 registerServices()
 
 const app = createApp(App)
+const pinia = createPinia()
+pinia.use(piniaPluginPersistedstate)
 
 app.use(PrimeVue, {
   theme: {
@@ -22,6 +25,6 @@ app.use(PrimeVue, {
   },
 })
 app.use(ToastService)
-app.use(createPinia())
+app.use(pinia)
 app.use(router)
 app.mount('#app')

@@ -4,6 +4,10 @@ import { ServiceProvider } from '@/shared/api'
 import type { UserService } from '../api/user.service'
 import type { User, CreateUserDto, UpdateUserDto } from './types'
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback
+}
+
 export const useUsersStore = defineStore('users', () => {
   const users = ref<User[]>([])
   const total = ref(0)
@@ -39,8 +43,9 @@ export const useUsersStore = defineStore('users', () => {
       total.value = data.total
       currentPage.value = page
       currentQuery.value = search
-    } catch (e: any) {
-      error.value = e.message || 'Failed to load users'
+    } catch (e: unknown) {
+      error.value = getErrorMessage(e, 'Failed to load users')
+      throw e
     } finally {
       isLoading.value = false
     }
@@ -51,8 +56,9 @@ export const useUsersStore = defineStore('users', () => {
     try {
       await service().delete(id)
       users.value = users.value.filter((u) => u.id !== id)
-    } catch (e: any) {
-      error.value = e.message
+    } catch (e: unknown) {
+      error.value = getErrorMessage(e, 'Failed to delete user')
+      throw e
     }
   }
 
@@ -63,8 +69,9 @@ export const useUsersStore = defineStore('users', () => {
       if (index !== -1) {
         users.value[index] = { ...users.value[index], ...result }
       }
-    } catch (e: any) {
-      error.value = e.message
+    } catch (e: unknown) {
+      error.value = getErrorMessage(e, 'Failed to update user')
+      throw e
     }
   }
 
@@ -73,8 +80,9 @@ export const useUsersStore = defineStore('users', () => {
       const result = await service().create(userData)
       //Додаємо нового фейкового юзера на початок масиву
       users.value.unshift(result)
-    } catch (e: any) {
-      error.value = e.message
+    } catch (e: unknown) {
+      error.value = getErrorMessage(e, 'Failed to create user')
+      throw e
     }
   }
 

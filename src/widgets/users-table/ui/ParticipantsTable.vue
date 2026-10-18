@@ -1,29 +1,14 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
 import { useUsersStore } from '@/entities/user'
 import type { User } from '@/entities/user'
 
 const emit = defineEmits<{
   (e: 'request-details', user: User): void
   (e: 'request-edit', user: User): void
+  (e: 'request-delete', user: User): void
 }>()
 
 const usersStore = useUsersStore()
-const searchQuery = ref(usersStore.currentQuery)
-
-onMounted(async () => {
-  await usersStore.fetchUsers(10, 0, searchQuery.value)
-})
-
-async function handleDelete(id: number) {
-  if (confirm('Ви впевнені, що хочете видалити цього користувача?')) {
-    await usersStore.removeUser(id)
-  }
-}
-
-watch(searchQuery, (newQuery) => {
-  usersStore.fetchUsers(10, 0, newQuery)
-})
 </script>
 
 <template>
@@ -62,7 +47,7 @@ watch(searchQuery, (newQuery) => {
               Edit
             </button>
             <button
-              @click="handleDelete(user.id)"
+              @click="emit('request-delete', user)"
               class="text-red-500 hover:text-red-700 underline text-xs font-medium"
             >
               Delete

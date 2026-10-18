@@ -6,16 +6,16 @@ import type { User, CreateUserDto } from '@/entities/user'
 import { useUsersStore } from '@/entities/user'
 import { UsersTable as ParticipantsTable } from '@/widgets/users-table'
 // Виправили імпорти UI-компонентів за правилами FSD
-import { SearchBar, AppModal } from '@/shared/ui'
+import { SearchBar, AppModal, useAppToast } from '@/shared/ui'
 import { UserForm as RegistrationForm } from '@/features/user-form'
 
 const route = useRoute()
 const router = useRouter()
 const usersStore = useUsersStore()
+const appToast = useAppToast()
 
 const isLoading = ref(false)
 const isMutating = ref(false)
-const globalError = ref<string | null>(null)
 
 const itemsPerPage = 10
 
@@ -28,7 +28,6 @@ const winners = ref<User[]>([])
 // Завантаження
 const fetchUsers = async (page: number, query: string, updateRoute = false) => {
   isLoading.value = true
-  globalError.value = null
   try {
     // Адаптували під нові параметри стору (limit, skip, search)
     const skip = (page - 1) * itemsPerPage
@@ -42,8 +41,8 @@ const fetchUsers = async (page: number, query: string, updateRoute = false) => {
         },
       })
     }
-  } catch (e: any) {
-    globalError.value = 'Failed to load users: ' + e.message
+  } catch {
+    appToast.error('Unable to load users', 'Please try again.')
   } finally {
     isLoading.value = false
   }
@@ -79,8 +78,9 @@ const handleAddUser = async (values: CreateUserDto) => {
     // Делегуємо створення юзера нашому Pinia стору
     await usersStore.createUser(values)
     isAddModalOpen.value = false
-  } catch (e: any) {
-    globalError.value = 'Error creating user'
+    appToast.success('User created', 'The user was created successfully.')
+  } catch {
+    appToast.error('Unable to create user', 'Please try again.')
   } finally {
     isMutating.value = false
   }
@@ -100,8 +100,9 @@ const confirmDelete = async () => {
     await usersStore.removeUser(deletedUserId)
     winners.value = winners.value.filter((winner) => winner.id !== deletedUserId)
     isDeleteModalOpen.value = false
-  } catch (e: any) {
-    globalError.value = 'Error deleting user'
+    appToast.success('User deleted', 'The user was deleted successfully.')
+  } catch {
+    appToast.error('Unable to delete user', 'Please try again.')
   } finally {
     isMutating.value = false
     selectedUser.value = null
@@ -180,13 +181,6 @@ const removeWinner = (id: number) => {
 
     <div v-if="isLoading" class="text-center py-8 text-blue-500 font-medium animate-pulse">
       Loading users from server...
-    </div>
-
-    <div
-      v-else-if="globalError"
-      class="p-4 mb-4 bg-red-50 text-red-600 rounded border border-red-200"
-    >
-      {{ globalError }}
     </div>
 
     <div v-else>
