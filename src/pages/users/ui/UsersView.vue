@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ServiceProvider } from '@/shared/api'
+// Видалили ServiceProvider, бо запити тепер робить Pinia!
 import type { User, CreateUserDto } from '@/entities/user'
 import { useUsersStore } from '@/entities/user'
 import { UsersTable as ParticipantsTable } from '@/widgets/users-table'
-import { SearchBar } from '@/shared/ui/search-bar'
-import { AppModal } from '@/shared/ui/app-modal'
+// Виправили імпорти UI-компонентів за правилами FSD
+import { SearchBar, AppModal } from '@/shared/ui'
 import { UserForm as RegistrationForm } from '@/features/user-form'
 
 const route = useRoute()
@@ -25,12 +25,15 @@ const isDeleteModalOpen = ref(false)
 const selectedUser = ref<User | null>(null)
 const winners = ref<User[]>([])
 
-//Завантаження
+// Завантаження
 const fetchUsers = async (page: number, query: string, updateRoute = false) => {
   isLoading.value = true
   globalError.value = null
   try {
-    await usersStore.fetchUsers(page, query)
+    // Адаптували під нові параметри стору (limit, skip, search)
+    const skip = (page - 1) * itemsPerPage
+    await usersStore.fetchUsers(itemsPerPage, skip, query)
+
     if (updateRoute) {
       router.replace({
         query: {
@@ -47,20 +50,20 @@ const fetchUsers = async (page: number, query: string, updateRoute = false) => {
 }
 
 const handleSearch = (query: string) => {
-  if (query === usersStore.searchQuery) return
+  if (query === usersStore.currentQuery) return
   fetchUsers(1, query, true)
 }
 
 // Пагінація
 const prevPage = () => {
   if (usersStore.currentPage > 1) {
-    fetchUsers(usersStore.currentPage - 1, usersStore.searchQuery, true)
+    fetchUsers(usersStore.currentPage - 1, usersStore.currentQuery, true)
   }
 }
 
 const nextPage = () => {
-  if (usersStore.currentPage * itemsPerPage < usersStore.totalUsers) {
-    fetchUsers(usersStore.currentPage + 1, usersStore.searchQuery, true)
+  if (usersStore.currentPage * itemsPerPage < usersStore.total) {
+    fetchUsers(usersStore.currentPage + 1, usersStore.currentQuery, true)
   }
 }
 
@@ -73,8 +76,8 @@ onMounted(() => {
 const handleAddUser = async (values: CreateUserDto) => {
   isMutating.value = true
   try {
-    const newUser = await ServiceProvider.users.create(values)
-    usersStore.addUser(newUser)
+    // Делегуємо створення юзера нашому Pinia стору
+    await usersStore.createUser(values)
     isAddModalOpen.value = false
   } catch (e: any) {
     globalError.value = 'Error creating user'
@@ -93,8 +96,8 @@ const confirmDelete = async () => {
   const deletedUserId = selectedUser.value.id
   isMutating.value = true
   try {
-    await ServiceProvider.users.delete(deletedUserId)
-    usersStore.removeUser(deletedUserId)
+    // Делегуємо видалення юзера стору
+    await usersStore.removeUser(deletedUserId)
     winners.value = winners.value.filter((winner) => winner.id !== deletedUserId)
     isDeleteModalOpen.value = false
   } catch (e: any) {
@@ -172,7 +175,8 @@ const removeWinner = (id: number) => {
       </article>
     </section>
 
-    <SearchBar @filter-by-name="handleSearch" :initial-value="usersStore.searchQuery" />
+    <!-- Використовуємо currentQuery замість searchQuery -->
+    <SearchBar @filter-by-name="handleSearch" :initial-value="usersStore.currentQuery" />
 
     <div v-if="isLoading" class="text-center py-8 text-blue-500 font-medium animate-pulse">
       Loading users from server...
@@ -198,7 +202,8 @@ const removeWinner = (id: number) => {
       >
         <p class="text-sm text-gray-600">
           Showing page <strong>{{ usersStore.currentPage }}</strong> (Total:
-          {{ usersStore.totalUsers }} users)
+          {{ usersStore.total }} users)
+          <!-- Використовуємо total замість totalUsers -->
         </p>
         <div class="flex gap-2">
           <button
@@ -210,7 +215,7 @@ const removeWinner = (id: number) => {
           </button>
           <button
             @click="nextPage"
-            :disabled="usersStore.currentPage * itemsPerPage >= usersStore.totalUsers"
+            :disabled="usersStore.currentPage * itemsPerPage >= usersStore.total"
             class="px-4 py-2 border border-gray-300 rounded font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Next

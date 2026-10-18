@@ -1,0 +1,6 @@
+export { default as SearchBar } from './SearchBar.vue'
+export { default as AppModal } from './AppModal.vue'
+export { default as DefaultLayout } from './layouts/DefaultLayout.vue'
+export { default as AuthLayout } from './layouts/AuthLayout.vue'
+export { default as AppInput } from './AppInput.vue'
+export { default as AppButton } from './AppButton.vue'

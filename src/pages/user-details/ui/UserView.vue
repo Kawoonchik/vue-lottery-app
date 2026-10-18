@@ -3,6 +3,8 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter, RouterView } from 'vue-router'
 import { useUsersStore } from '@/entities/user'
 import type { User } from '@/entities/user'
+import { ServiceProvider } from '@/shared/api'
+import type { UserService } from '@/entities/user/api/user.service'
 
 const props = defineProps<{
   id: string
@@ -19,7 +21,16 @@ const fetchUser = async () => {
   isLoading.value = true
   error.value = ''
   try {
-    user.value = await usersStore.getUserById(Number(props.id))
+    // 1. Шукаємо юзера в локальному кеші Pinia
+    let foundUser = usersStore.users.find((u) => u.id === Number(props.id))
+
+    // 2. Якщо кеш пустий (завантажили сторінку напряму), тягнемо з API
+    if (!foundUser) {
+      const userService = ServiceProvider.get<UserService>('users')
+      foundUser = await userService.getById(Number(props.id))
+    }
+
+    user.value = foundUser
   } catch (e: any) {
     error.value = 'Failed to load user data: ' + e.message
   } finally {

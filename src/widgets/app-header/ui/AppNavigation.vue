@@ -9,7 +9,7 @@ const router = useRouter()
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 
 const handleLogout = () => {
-  authStore.logout()
+  authStore.clearSession()
   router.push('/login') // Після виходу редірект на сторінку логіну
 }
 </script>

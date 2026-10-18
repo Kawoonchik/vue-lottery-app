@@ -1,4 +1,3 @@
-// @ts-expect-error Vite processes SCSS imports at runtime.
 import './assets/main.scss'
 
 import { createApp } from 'vue'

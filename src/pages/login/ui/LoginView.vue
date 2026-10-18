@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useSessionStore } from '@/entities/session'
 import { ServiceProvider } from '@/shared/api'
 import type { AuthService } from '@/entities/session/api/auth.service'
+import { AppInput, AppButton } from '@/shared/ui'
 
 const router = useRouter()
 const sessionStore = useSessionStore()

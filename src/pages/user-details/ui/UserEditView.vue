@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ServiceProvider } from '@/shared/api'
 import { useUsersStore } from '@/entities/user'
 import { UserForm as RegistrationForm } from '@/features/user-form'
 import type { User, UpdateUserDto } from '@/entities/user'
@@ -23,9 +22,11 @@ const handleUpdate = async (values: UpdateUserDto) => {
   isMutating.value = true
   updateError.value = ''
   try {
-    const updatedData = await ServiceProvider.users.update(props.user.id, values)
-    usersStore.updateUser(props.user.id, updatedData)
+    // 1. Просто викликаємо стор, він сам оновить і сервер, і локальний стан
+    await usersStore.updateUser(props.user.id, values)
 
+    // 2. Створюємо об'єкт з оновленими даними для еміту
+    const updatedData = { ...props.user, ...values } as User
     emit('update-success', updatedData)
 
     router.push(`/users/${props.user.id}`)
