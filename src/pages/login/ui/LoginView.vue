@@ -4,7 +4,11 @@ import { useRouter } from 'vue-router'
 import { useSessionStore } from '@/entities/session'
 import { ServiceProvider } from '@/shared/api'
 import type { AuthService } from '@/entities/session/api/auth.service'
-import { Form, Field, ErrorMessage } from 'vee-validate'
+import { AppButton, AppInput } from '@/shared/ui'
+
+// 1. Повертаємо імпорти VeeValidate та Yup
+import { Form } from 'vee-validate'
+import * as yup from 'yup'
 
 const router = useRouter()
 const sessionStore = useSessionStore()
@@ -13,14 +17,12 @@ const authService = ServiceProvider.get<AuthService>('auth')
 const globalError = ref('')
 const isLoading = ref(false)
 
-// 2. Схема валідації (якщо юзаєш yup + VeeValidate)
-// const schema = yup.object({
-//   username: yup.string().required(),
-//   password: yup.string().required(),
-// })
-const schema = {}
+// 2. Відновлюємо правила валідації
+const schema = yup.object({
+  username: yup.string().required('Введіть логін'),
+  password: yup.string().required('Введіть пароль'),
+})
 
-// 3. Функція onSubmit (на яку свариться Vue)
 async function onSubmit(values: any) {
   isLoading.value = true
   globalError.value = ''
@@ -50,35 +52,13 @@ async function onSubmit(values: any) {
         {{ globalError }}
       </div>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-        <Field
-          name="username"
-          type="text"
-          class="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500"
-          placeholder="emilys"
-        />
-        <ErrorMessage name="username" class="text-red-500 text-xs mt-1 block" />
-      </div>
+      <AppInput name="username" label="Username" placeholder="emilys" />
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-        <Field
-          name="password"
-          type="password"
-          class="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500"
-          placeholder="emilyspass"
-        />
-        <ErrorMessage name="password" class="text-red-500 text-xs mt-1 block" />
-      </div>
+      <AppInput name="password" label="Password" type="password" placeholder="emilyspass" />
 
-      <button
-        type="submit"
-        :disabled="isLoading"
-        class="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition-colors disabled:opacity-50"
-      >
+      <AppButton type="submit" :disabled="isLoading" class="w-full mt-4">
         {{ isLoading ? 'Logging in...' : 'Login' }}
-      </button>
+      </AppButton>
     </Form>
   </div>
 </template>

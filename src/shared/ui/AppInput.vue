@@ -1,28 +1,34 @@
 <script setup lang="ts">
-defineProps<{
-  modelValue: string | number
-  label: string
+import { useField } from 'vee-validate'
+// ВАЖЛИВО: Цей рядок обов'язковий, щоб інпут виглядав як PrimeVue!
+import InputText from 'primevue/inputtext'
+
+const props = defineProps<{
+  name: string
+  label?: string
   type?: string
   placeholder?: string
-  error?: string
 }>()
 
-defineEmits<{
-  (e: 'update:modelValue', value: string): void
-}>()
+const { value, errorMessage } = useField<string>(() => props.name)
 </script>
 
 <template>
-  <div class="mb-4">
-    <label class="block text-sm font-medium text-gray-700 mb-1">{{ label }}</label>
-    <input
+  <div class="flex flex-col gap-1 w-full">
+    <label v-if="label" :for="name" class="block text-sm font-medium text-gray-700">
+      {{ label }}
+    </label>
+
+    <InputText
+      :id="name"
+      v-model="value"
       :type="type || 'text'"
       :placeholder="placeholder"
-      :value="modelValue"
-      @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-      class="w-full border rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
-      :class="error ? 'border-red-500 focus:ring-red-400' : 'border-gray-300'"
+      :class="['w-full', { 'p-invalid': errorMessage }]"
     />
-    <span v-if="error" class="text-xs text-red-500 mt-1 block">{{ error }}</span>
+
+    <small v-if="errorMessage" class="text-red-500 text-xs mt-1 block">
+      {{ errorMessage }}
+    </small>
   </div>
 </template>
