@@ -4,7 +4,7 @@ import { useRoute, useRouter, RouterView } from 'vue-router'
 import { useUsersStore } from '@/entities/user'
 import type { User } from '@/entities/user'
 import { ServiceProvider } from '@/shared/api'
-import type { UserService } from '@/entities/user/api/user.service'
+import type { UserService } from '@/entities/user'
 
 const props = defineProps<{
   id: string
@@ -31,8 +31,9 @@ const fetchUser = async () => {
     }
 
     user.value = foundUser
-  } catch (e: any) {
-    error.value = 'Failed to load user data: ' + e.message
+  } catch (e: unknown) {
+    const details = e instanceof Error ? e.message : 'Unknown error'
+    error.value = 'Failed to load user data: ' + details
   } finally {
     isLoading.value = false
   }

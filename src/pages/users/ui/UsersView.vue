@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 // Видалили ServiceProvider, бо запити тепер робить Pinia!
 import type { User, CreateUserDto } from '@/entities/user'
 import { useUsersStore } from '@/entities/user'
-import { UsersTable as ParticipantsTable } from '@/widgets/users-table'
+import ParticipantsTable from './ParticipantsTable.vue'
 // Виправили імпорти UI-компонентів за правилами FSD
 import { SearchBar, AppModal, useAppToast } from '@/shared/ui'
 import { UserForm as RegistrationForm } from '@/features/user-form'
