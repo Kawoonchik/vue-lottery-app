@@ -5,7 +5,8 @@ import { ServiceProvider } from '@/shared/api'
 import type { User, CreateUserDto } from '@/entities/user'
 import { useUsersStore } from '@/entities/user'
 import { UsersTable as ParticipantsTable } from '@/widgets/users-table'
-import { SearchBar, AppModal } from '@/shared/ui'
+import { SearchBar } from '@/shared/ui/search-bar'
+import { AppModal } from '@/shared/ui/app-modal'
 import { UserForm as RegistrationForm } from '@/features/user-form'
 
 const route = useRoute()

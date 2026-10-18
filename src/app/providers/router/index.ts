@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useSessionStore as useAuthStore } from '@/entities/session'
+import { useSessionStore } from '@/entities/session'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory((import.meta as ImportMeta & { env: { BASE_URL: string } }).env.BASE_URL),
   routes: [
     {
       path: '/',
@@ -52,14 +52,11 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore()
-  const isAuthenticated = authStore.isAuthenticated
+router.beforeEach((to, _from, next) => {
+  const sessionStore = useSessionStore() // Беремо стор
 
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    next({ name: 'login', query: { redirect: to.fullPath } })
-  } else if (to.name === 'login' && isAuthenticated) {
-    next({ name: 'users' })
+  if (to.meta.requiresAuth && !sessionStore.isAuthenticated) {
+    next({ name: 'login' })
   } else {
     next()
   }

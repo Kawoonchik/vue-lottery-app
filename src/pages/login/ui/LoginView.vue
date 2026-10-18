@@ -1,37 +1,36 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useSessionStore as useAuthStore } from '@/entities/session'
-import { Form, Field, ErrorMessage } from 'vee-validate'
-import * as yup from 'yup'
+import { useRouter } from 'vue-router'
+import { useSessionStore } from '@/entities/session'
+import { ServiceProvider } from '@/shared/api'
+import type { AuthService } from '@/entities/session/api/auth.service'
 
-const authStore = useAuthStore()
 const router = useRouter()
-const route = useRoute()
+const sessionStore = useSessionStore()
+const authService = ServiceProvider.get<AuthService>('auth')
 
-const isLoading = ref(false)
 const globalError = ref('')
+const isLoading = ref(false)
 
-const schema = yup.object({
-  username: yup.string().required('Username is required'),
-  password: yup
-    .string()
-    .min(6, 'Password must be at least 6 characters')
-    .required('Password is required'),
-})
+// 2. Схема валідації (якщо юзаєш yup + VeeValidate)
+// const schema = yup.object({
+//   username: yup.string().required(),
+//   password: yup.string().required(),
+// })
+const schema = {}
 
-const onSubmit = async (values: any) => {
+// 3. Функція onSubmit (на яку свариться Vue)
+async function onSubmit(values: any) {
   isLoading.value = true
   globalError.value = ''
-
   try {
-    await authStore.login(values.username, values.password)
+    const response = await authService.login(values.username, values.password)
 
-    const redirectPath = route.query.redirect?.toString() || '/users'
-    router.push(redirectPath)
+    sessionStore.setSession(response.accessToken)
+
+    router.push({ name: 'home' })
   } catch (e: any) {
-    console.error('Login error:', e)
-    globalError.value = `Помилка: ${e.message}`
+    globalError.value = 'Невірний логін або пароль'
   } finally {
     isLoading.value = false
   }

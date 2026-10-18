@@ -1,15 +1,29 @@
 <script setup lang="ts">
+import { onMounted, ref, watch } from 'vue'
+import { useUsersStore } from '@/entities/user'
 import type { User } from '@/entities/user'
-
-defineProps<{
-  users: User[]
-}>()
 
 const emit = defineEmits<{
   (e: 'request-details', user: User): void
   (e: 'request-edit', user: User): void
-  (e: 'request-delete', user: User): void
 }>()
+
+const usersStore = useUsersStore()
+const searchQuery = ref(usersStore.currentQuery)
+
+onMounted(async () => {
+  await usersStore.fetchUsers(10, 0, searchQuery.value)
+})
+
+async function handleDelete(id: number) {
+  if (confirm('Ви впевнені, що хочете видалити цього користувача?')) {
+    await usersStore.removeUser(id)
+  }
+}
+
+watch(searchQuery, (newQuery) => {
+  usersStore.fetchUsers(10, 0, newQuery)
+})
 </script>
 
 <template>
@@ -27,7 +41,7 @@ const emit = defineEmits<{
         </tr>
       </thead>
       <tbody>
-        <tr v-for="user in users" :key="user.id" class="border-b hover:bg-gray-50">
+        <tr v-for="user in usersStore.users" :key="user.id" class="border-b hover:bg-gray-50">
           <td class="px-6 py-4 font-bold text-gray-400">{{ user.id }}</td>
           <td class="px-6 py-4 font-medium text-gray-900">{{ user.firstName }}</td>
           <td class="px-6 py-4 font-medium text-gray-900">{{ user.lastName }}</td>
@@ -48,14 +62,14 @@ const emit = defineEmits<{
               Edit
             </button>
             <button
-              @click="emit('request-delete', user)"
+              @click="handleDelete(user.id)"
               class="text-red-500 hover:text-red-700 underline text-xs font-medium"
             >
               Delete
             </button>
           </td>
         </tr>
-        <tr v-if="users.length === 0">
+        <tr v-if="usersStore.users.length === 0">
           <td colspan="7" class="px-6 py-8 text-center text-gray-400">No users found.</td>
         </tr>
       </tbody>
