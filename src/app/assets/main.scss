@@ -1,3 +1,77 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html.app-dark {
+  color-scheme: dark;
+}
+
+html.app-dark body {
+  background-color: #111827;
+  color: #e5e7eb;
+}
+
+html.app-dark .bg-white,
+html.app-dark .bg-gray-100 {
+  background-color: #1f2937;
+}
+
+html.app-dark .bg-gray-50 {
+  background-color: #111827;
+}
+
+html.app-dark .bg-gray-200 {
+  background-color: #374151;
+}
+
+html.app-dark [class~='hover:bg-gray-50']:hover {
+  background-color: #374151;
+}
+
+html.app-dark [class~='hover:bg-gray-100']:hover {
+  background-color: #4b5563;
+}
+
+html.app-dark .text-gray-900,
+html.app-dark .text-gray-800 {
+  color: #f9fafb;
+}
+
+html.app-dark .text-gray-700,
+html.app-dark .text-gray-600 {
+  color: #d1d5db;
+}
+
+html.app-dark .text-gray-500,
+html.app-dark .text-gray-400 {
+  color: #9ca3af;
+}
+
+html.app-dark .border-gray-100,
+html.app-dark .border-gray-200 {
+  border-color: #374151;
+}
+
+html.app-dark .border-gray-300 {
+  border-color: #4b5563;
+}
+
+html.app-dark .bg-red-50 {
+  background-color: #450a0a;
+}
+
+html.app-dark .border-red-200 {
+  border-color: #7f1d1d;
+}
+
+html.app-dark .text-red-600 {
+  color: #fca5a5;
+}
+
+html.app-dark .bg-yellow-50 {
+  background-color: #422006;
+}
+
+html.app-dark .border-yellow-200 {
+  border-color: #854d0e;
+}

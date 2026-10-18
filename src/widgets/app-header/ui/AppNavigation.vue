@@ -2,6 +2,9 @@
 import { RouterLink, useRouter } from 'vue-router'
 import { useSessionStore as useAuthStore } from '@/entities/session'
 import { computed } from 'vue'
+import { useThemeStore } from '@/entities/theme'
+
+const themeStore = useThemeStore()
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -31,7 +34,6 @@ const handleLogout = () => {
       About author
     </RouterLink>
 
-    <!-- Показуємо Users тільки якщо авторизований (опціонально, для кращого UX) -->
     <RouterLink
       v-if="isAuthenticated"
       to="/users"
@@ -56,5 +58,12 @@ const handleLogout = () => {
     >
       Login
     </RouterLink>
+
+    <button
+      @click="themeStore.toggleTheme()"
+      class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 transition-colors"
+    >
+      {{ themeStore.isDark ? '🌙 Dark' : '☀️ Light' }}
+    </button>
   </nav>
 </template>
